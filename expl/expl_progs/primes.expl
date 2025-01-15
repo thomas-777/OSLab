@@ -1,0 +1,26 @@
+int main(){
+    decl
+        int a,i,j,k,temp;
+    enddecl
+
+    begin
+        i=2;
+        while(i<=100) do 
+            j=i-1;
+            k=1;
+            while(j>1) do
+                if((i%j)==0) then  
+                    k=0; 
+                    break;
+                endif;
+                j=j-1;
+            endwhile;
+            if(k==1) then 
+                temp=exposcall("Write",-2,i);
+            endif;
+            i=i+1; 
+
+        endwhile;
+        return 0;
+        end
+}
