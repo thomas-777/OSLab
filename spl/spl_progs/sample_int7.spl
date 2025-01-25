@@ -29,7 +29,21 @@ else
 	//arg2 is word to be printed
 	alias word R5;
 	word =[[PTBR + 2 *((userSP -3) /512)] * 512 +((userSP -3)% 512)];
-	print word;
+
+	multipush(R0, R1, R2, R3, R4, R5);
+	alias functionNumber R1;
+	functionNumber=3;
+
+	alias PID R2;
+	PID=[SYSTEM_STATUS_TABLE+1];
+
+	alias wordToPrint R3;
+	wordToPrint=word;
+
+	call MOD_4;
+
+	multipop(R0, R1, R2, R3, R4, R5);
+
 	//return 0 success
 	alias physicalAddrRetVal R6;
 	physicalAddrRetVal =([PTBR +2 *(userSP -1)/512] *512) + ((userSP-1) % 512);

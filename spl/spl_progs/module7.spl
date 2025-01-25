@@ -33,12 +33,22 @@ loadi(3, 16);
 loadi(16,29);
 loadi(17,30);
 
+//module0
+loadi(40,53);
+loadi(41,54);
+
+//module0
+loadi(48,61);
+loadi(49,62);
+
 //init_page_Table
 
 //changing_the_PTBR_value_for_init_PTLR_remains_the_same
 PTBR = PAGE_TABLE_BASE+20;
 PTLR=10;
 
+//initialize terminal status table
+[TERMINAL_STATUS_TABLE]=0;
 
 //Library
 [PTBR+0] = 63;
