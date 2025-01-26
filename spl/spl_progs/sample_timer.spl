@@ -20,7 +20,6 @@ call MOD_5;
 
 
 
-//print "TIMER";
 //print [SYSTEM_STATUS_TABLE+1];
 
 //restore and set sp to user stack
