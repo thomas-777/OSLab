@@ -1,0 +1,74 @@
+alias functNum R1;
+alias currentPID R2;
+
+//exit process
+if(functNum==3) then
+    multipush(R1,R2);
+
+    R1=4;
+    R2=currentPID;
+
+    call MOD_1;
+
+    R1=2;
+    R2=currentPID;
+
+    call MOD_1;
+
+    multipop(R1,R2);
+
+    [PROCESS_TABLE+16*currentPID+4]=TERMINATED;
+    return;
+endif;
+
+//free userareapage
+if(functNum==2) then
+    alias userareapage R3;
+    userareapage=[PROCESS_TABLE+16*currentPID+11];
+    multipush(R1,R2,R3);
+
+    R1=2;
+    R2=userareapage;
+
+    call MOD_2;
+
+    multipop(R1,R2,R3);
+    return;
+endif;
+
+//free page table
+if(functNum==4) then
+
+    [PTBR + 0] = -1;
+    [PTBR + 1] = "0000";
+    [PTBR + 2] = -1;
+    [PTBR + 3] = "0000";
+
+    alias i R3;
+    alias pageNum R4;
+    i=1;
+    while(i<(PTLR-1)) do
+        pageNum=[PTBR + 2+2*i];
+
+        if(pageNum!=-1) then
+            multipush(R1,R2,R3,R4);
+
+            R1=2;
+            R2=pageNum;
+            call MOD_2;
+
+            multipop(R1,R2,R3,R4);
+
+            [PTBR + 2 + 2 * i] = -1;
+            [PTBR + 3 + 2 * i] = "0000";
+
+        endif;
+        i=i+1;
+    endwhile;
+
+    return;
+endif;
+
+
+
+
