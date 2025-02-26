@@ -1,3 +1,5 @@
+//memory manager
+
 alias functNum R1;
 
 
@@ -30,7 +32,7 @@ if(functNum==1) then
         i=i+1;
     endwhile;
     [MEMORY_FREE_LIST+i]=1;
-    R0=[MEMORY_FREE_LIST+i];
+    R0=i;
 
     return;
 
@@ -40,7 +42,7 @@ endif;
 if(functNum==2) then
     alias pageToBeReleased R2;
     [MEMORY_FREE_LIST+pageToBeReleased]=[MEMORY_FREE_LIST+pageToBeReleased]-1;
-    [SYSTEM_STATUS_TABLE+2]=[SYSTEM_STATUS_TABLE+2]-1;
+    [SYSTEM_STATUS_TABLE+2]=[SYSTEM_STATUS_TABLE+2]+1;
 
     alias i R3;
     i=1;

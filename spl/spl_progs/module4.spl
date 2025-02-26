@@ -1,7 +1,11 @@
+//device manager module
+
 alias functionNum R1;
 alias currentPID R2;
 alias word R3;
 breakpoint;
+
+//print
 if(functionNum==3) then
     multipush(R1,R2,R3);
     functionNum=8;
@@ -24,10 +28,11 @@ if(functionNum==3) then
 
 endif;
 
+//read
 if(functionNum==4) then 
     breakpoint;
     multipush(R1,R2,R3);
-    functionNum=8;
+    functionNum=8;//aquire terminal
 
     call MOD_0;
 
@@ -48,3 +53,31 @@ if(functionNum==4) then
 
 
 endif;
+
+//disk load
+
+if(functionNum==2) then
+    alias pagenumber R3;
+    alias blocknumber R4;
+    multipush(R1,R2,R3,R4);
+    R1=3;
+    R2=currentPID;
+    call MOD_0;
+    multipop(R1,R2,R3,R4);
+    //update disk status table
+    [DISK_STATUS_TABLE+1]=0;
+    [DISK_STATUS_TABLE+2]=pagenumber;
+    [DISK_STATUS_TABLE+3]=blocknumber;
+    load(pagenumber,blocknumber);   
+    
+    [PROCESS_TABLE+[SYSTEM_STATUS_TABLE +1]*16 + 4]=WAIT_DISK;
+
+    multipush(R1,R2,R3,R4,R5);
+
+    call MOD_5;
+
+    multipop(R1,R2,R3,R4,R5);
+    return;
+endif;
+
+

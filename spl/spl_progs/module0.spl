@@ -1,5 +1,9 @@
+//resource manager module
+
 alias functionNum R1;
 alias currentPID R2;
+
+
 if(functionNum==8) then
     breakpoint;
     while([TERMINAL_STATUS_TABLE] ==1) do
@@ -16,8 +20,8 @@ if(functionNum==8) then
 
     return;
 
+endif;
 
-else
 if(functionNum==9) then 
     breakpoint;
     if(currentPID==[TERMINAL_STATUS_TABLE+1]) then
@@ -40,10 +44,22 @@ if(functionNum==9) then
         return;
     endif;
 
-else 
-    alias returnValue R0;
-    returnValue = -1;
-    return;
 endif; 
+
+//aquire disk
+if(functionNum==3) then
+    while([DISK_STATUS_TABLE]==1) do
+        [PROCESS_TABLE+currentPID*16+4]=WAIT_DISK;
+        multipush(R1,R2);
+
+        call MOD_5;
+
+        multipop(R1,R2);
+    endwhile;
+
+    [DISK_STATUS_TABLE]=1;
+    [DISK_STATUS_TABLE+4]=currentPID;
+
+    return;
 endif;
 
