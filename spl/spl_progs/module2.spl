@@ -56,4 +56,55 @@ if(functNum==2) then
     return;
 endif;
 
+//get code page
+if(functNum==5) then
+breakpoint;
+    alias blockNum R2;
+    alias i R3;
+    alias j R4;
+    alias pageNum R5;
+    i=0;
+    while(i<16) do
+        
+        j=4;
+        while(j<8) do
+            if([DISK_MAP_TABLE + i*10 + j]==blockNum) then
+                
+                pageNum=[PAGE_TABLE_BASE+i*20+2*j];
+                if(pageNum!=-1) then
+                    [MEMORY_FREE_LIST+pageNum]=[MEMORY_FREE_LIST+pageNum]+1;
+                    R0=pageNum;
+                    return;
+                endif;
+            endif;
+        j=j+1;
+        endwhile;                 
+        i=i+1;
+    endwhile;
+    
 
+    multipush(R1,R2);
+    R1=1;
+    call MOD_2;
+    pageNum=R0;
+    multipop(R1,R2);
+    breakpoint;
+    multipush(R1,R2,R5);
+    R1 = 2;
+    R4 = blockNum;
+    R2 = [SYSTEM_STATUS_TABLE + 1];
+    R3 = pageNum;
+    call MOD_4;
+    multipop(R1,R2,R5);
+    R0=pageNum;
+    breakpoint;
+    return;
+
+endif;
+
+if(functNum==4) then
+    alias blockNum R2;
+    alias currentPID R3;
+    [DISK_FREE_LIST+blockNum]=[DISK_FREE_LIST+blockNum]-1;
+    return;
+endif;

@@ -5,7 +5,6 @@ alias currentPID R2;
 
 
 if(functionNum==8) then
-    breakpoint;
     while([TERMINAL_STATUS_TABLE] ==1) do
         [PROCESS_TABLE +currentPID *16 +4]=WAIT_TERMINAL;
         multipush(R1,R2);
@@ -23,7 +22,6 @@ if(functionNum==8) then
 endif;
 
 if(functionNum==9) then 
-    breakpoint;
     if(currentPID==[TERMINAL_STATUS_TABLE+1]) then
         [TERMINAL_STATUS_TABLE]=0;
         alias i R3;

@@ -3,7 +3,6 @@
 alias functionNum R1;
 alias currentPID R2;
 alias word R3;
-breakpoint;
 
 //print
 if(functionNum==3) then
@@ -30,7 +29,6 @@ endif;
 
 //read
 if(functionNum==4) then 
-    breakpoint;
     multipush(R1,R2,R3);
     functionNum=8;//aquire terminal
 
@@ -48,7 +46,6 @@ if(functionNum==4) then
     multipop(R1,R2,R3);
 
     [[PTBR + 2 * (word / 512)] * 512 + (word % 512)] = [PROCESS_TABLE + currentPID * 16 + 8];
-    breakpoint;
     return;
 
 
