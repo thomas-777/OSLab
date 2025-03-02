@@ -67,6 +67,10 @@ loadi(7,20);
 //disk free list 
 loadi(61,2);
 
+//INT8
+loadi(18,31);
+loadi(19,32);
+
 //initialize disk status table
 [DISK_STATUS_TABLE]=0;
 

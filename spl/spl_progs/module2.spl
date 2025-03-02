@@ -9,7 +9,6 @@ if(functNum==1) then
     //increment wait mem count
     [SYSTEM_STATUS_TABLE+3]=[SYSTEM_STATUS_TABLE+3]+1;
 
-    //while mem count==0
     while([SYSTEM_STATUS_TABLE+2]==0) do    
         [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+4]=WAIT_MEM;
         multipush(R1);
@@ -22,13 +21,13 @@ if(functNum==1) then
     //decrement wait count
     [SYSTEM_STATUS_TABLE+3]=[SYSTEM_STATUS_TABLE+3]-1;
 
-    //INCREMENT MEM FREE COUNT
+    //decrement MEM FREE COUNT
     [SYSTEM_STATUS_TABLE+2]=[SYSTEM_STATUS_TABLE+2]-1;
 
     alias i R3;
 
-    i=0;
-    while([MEMORY_FREE_LIST+i]!=0) do  
+    i=76;
+    while(([MEMORY_FREE_LIST+i]>0) &&( i<128)) do  
         i=i+1;
     endwhile;
     [MEMORY_FREE_LIST+i]=1;
@@ -42,7 +41,10 @@ endif;
 if(functNum==2) then
     alias pageToBeReleased R2;
     [MEMORY_FREE_LIST+pageToBeReleased]=[MEMORY_FREE_LIST+pageToBeReleased]-1;
-    [SYSTEM_STATUS_TABLE+2]=[SYSTEM_STATUS_TABLE+2]+1;
+    if ([MEMORY_FREE_LIST + pageToBeReleased] == 0) then
+        // increment memory free count
+        [SYSTEM_STATUS_TABLE + 2] = [SYSTEM_STATUS_TABLE + 2] + 1;
+    endif;
 
     alias i R3;
     i=1;
@@ -58,7 +60,6 @@ endif;
 
 //get code page
 if(functNum==5) then
-breakpoint;
     alias blockNum R2;
     alias i R3;
     alias j R4;
@@ -88,7 +89,6 @@ breakpoint;
     call MOD_2;
     pageNum=R0;
     multipop(R1,R2);
-    breakpoint;
     multipush(R1,R2,R5);
     R1 = 2;
     R4 = blockNum;
@@ -97,7 +97,6 @@ breakpoint;
     call MOD_4;
     multipop(R1,R2,R5);
     R0=pageNum;
-    breakpoint;
     return;
 
 endif;

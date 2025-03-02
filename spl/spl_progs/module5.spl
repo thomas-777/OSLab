@@ -31,6 +31,8 @@ PTLR=[processtableentry+15];
 
 if (state == CREATED) then
     SP = [processtableentry + 13];
+    BP = [[processtableentry + 11] * 512];
+
     [processtableentry + 4] = RUNNING;
     [processtableentry + 9] = 0; // mode flag
     ireturn;

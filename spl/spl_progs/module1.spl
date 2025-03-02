@@ -3,6 +3,26 @@
 alias functNum R1;
 alias currentPID R2;
 
+//GET PCB ENTRY
+if(functNum==1) then
+    alias i R2;
+    i=1;
+    while(i<16) do
+        if([PROCESS_TABLE + 16*i+4]==TERMINATED) then
+            R0=i;
+            [PROCESS_TABLE + 16*i+4]=ALLOCATED;
+            [PROCESS_TABLE + i * 16 + 1] = i;
+            [PROCESS_TABLE + i * 16 + 14] = PAGE_TABLE_BASE + (20 * i);
+            [PROCESS_TABLE + i * 16 + 15] = 10;
+            return;
+        endif;
+        i=i+1;
+    endwhile;
+    R0=-1;
+    return;
+endif;
+
+
 //exit process
 if(functNum==3) then
     multipush(R1,R2);
