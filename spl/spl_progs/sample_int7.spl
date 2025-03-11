@@ -40,7 +40,6 @@ else
 
 	alias wordToPrint R3;
 	wordToPrint=word;
-	breakpoint;
 	call MOD_4;
 
 	multipop(R0, R1, R2, R3, R4, R5);

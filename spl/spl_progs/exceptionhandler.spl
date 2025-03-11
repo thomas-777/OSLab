@@ -1,7 +1,7 @@
 //exception handler
-breakpoint; 
-backup;
-alias currentPID R0;
+breakpoint;
+
+alias currentPID R1;
 currentPID=[SYSTEM_STATUS_TABLE+1];
 
 [PROCESS_TABLE+currentPID*16+9]=-1;
@@ -9,23 +9,24 @@ currentPID=[SYSTEM_STATUS_TABLE+1];
 
 [PROCESS_TABLE+currentPID*16+13]=SP;
 
-SP=[PROCESS_TABLE+currentPID*16+11];
-
+SP=[PROCESS_TABLE+currentPID*16+11]*512-1;
+backup;
 multipush(EIP);
 
 //not page fault
-if((EC!=0) || ( [PROCESS_TABLE+currentPID*16+13]>=PTLR*512-1)) then
-    if (EC == 0) then
-        print "Stack overflow";
-    endif;
+if((EC!=0) || ( [PROCESS_TABLE+currentPID*16+13]>=(PTLR*512-1))) then
     if (EC == 1) then
         print "Illegal instruction";
-    endif;
+    else
     if (EC == 2) then
         print "Illegal memory access";
-    endif;
+    else
     if (EC == 3) then
         print "Arithmetic Exception";
+    else
+        print "StackOverflow";
+    endif;
+    endif;
     endif;
     R1=3;
     R2=[SYSTEM_STATUS_TABLE+1];
@@ -35,23 +36,26 @@ if((EC!=0) || ( [PROCESS_TABLE+currentPID*16+13]>=PTLR*512-1)) then
 endif;
 
 //code page fault
-if(EPN>3 || EPN<8) then
+if(EPN>3 && EPN<8) then
     alias blockNum R2;
-
+    alias pageNum R5;
     blockNum=[DISK_MAP_TABLE+currentPID*10+EPN];
-
+    
     multipush(R0,R1,R2);
     multipush(EPN);
     R1=5;
     R2=blockNum;
     R3=currentPID;
+    breakpoint;
     call MOD_2;
     multipop(EPN);
+    pageNum=R0;
     multipop(R0,R1,R2);
 
-    [PTBR+2*EPN]=R0;
+    [PTBR+2*EPN]=pageNum;
     [PTBR+2*EPN+1]="1100";
-    breakpoint;
+
+
 endif;
 
 
@@ -75,6 +79,7 @@ endif;
 
 [PROCESS_TABLE+currentPID*16+9]=0;
 
+multipop(EIP);
 restore;
 SP=[PROCESS_TABLE+currentPID*16+13];
 

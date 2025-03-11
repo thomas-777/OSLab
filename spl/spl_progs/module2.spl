@@ -11,11 +11,11 @@ if(functNum==1) then
 
     while([SYSTEM_STATUS_TABLE+2]==0) do    
         [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+4]=WAIT_MEM;
-        multipush(R1);
+        backup;
 
         call MOD_5;
 
-        multipop(R1);
+        restore;
     endwhile;
 
     //decrement wait count
@@ -60,6 +60,7 @@ endif;
 
 //get code page
 if(functNum==5) then
+breakpoint;
     alias blockNum R2;
     alias i R3;
     alias j R4;
@@ -94,6 +95,7 @@ if(functNum==5) then
     R4 = blockNum;
     R2 = [SYSTEM_STATUS_TABLE + 1];
     R3 = pageNum;
+    breakpoint;
     call MOD_4;
     multipop(R1,R2,R5);
     R0=pageNum;

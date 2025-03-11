@@ -71,8 +71,25 @@ loadi(61,2);
 loadi(18,31);
 loadi(19,32);
 
+//int11
+loadi(24,37);
+loadi(25,38);
+
+//int15
+loadi(32,45);
+loadi(33,46);
+
+//int13
+loadi(28,41);
+loadi(29,42);
+
+//int14
+loadi(30,43);
+loadi(31,44);
+
 //initialize disk status table
 [DISK_STATUS_TABLE]=0;
+
 
 
 
@@ -183,3 +200,12 @@ while (i < 16) do
 endwhile;
 
 return;
+
+//semaphore table initialization
+// initialization of semaphore table
+i = 0;
+while (i < MAX_SEM_COUNT) do
+    [SEMAPHORE_TABLE + i * 4] = -1;
+    [SEMAPHORE_TABLE + i * 4 + 1] = 0;
+    i = i + 1;
+endwhile;

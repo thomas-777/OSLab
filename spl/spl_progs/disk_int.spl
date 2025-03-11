@@ -1,4 +1,4 @@
-breakpoint;
+
 [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+13]=SP;
 
 SP=[PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+11]*512 -1;
@@ -21,6 +21,6 @@ endwhile;
 restore;
 
 SP=[PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+13];
-breakpoint;
+
 
 ireturn;

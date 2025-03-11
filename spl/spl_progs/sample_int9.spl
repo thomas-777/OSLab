@@ -1,6 +1,5 @@
 [PROCESS_TABLE + ( [SYSTEM_STATUS_TABLE + 1] * 16) + 13] = SP;
 SP = [PROCESS_TABLE + ([SYSTEM_STATUS_TABLE + 1] * 16) + 11] * 512 - 1;
-breakpoint;
 backup;
 
 alias userSP R0; 
@@ -168,10 +167,8 @@ R2=[INODE_TABLE+16*inode_index + 8];
 call MOD_2;
 [PTBR+8]=R0;
 [PTBR+9]="0100";
-breakpoint;
 restore;
 
-breakpoint;
 //INVALIDATE ALL OTHERS
 
 [PTBR+10]=-1;
@@ -236,5 +233,4 @@ restore;
 
 //changing back to user stack
 SP=8*512;
-breakpoint;
 ireturn;

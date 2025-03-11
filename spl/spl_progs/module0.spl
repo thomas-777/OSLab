@@ -3,7 +3,46 @@
 alias functionNum R1;
 alias currentPID R2;
 
+//ACQUIRE SEMAPHORE
+if(functionNum==6) then 
+        alias currentPID R2;
+        alias i R3;
+        i=0;
+        while(i<32) do
+            if([SEMAPHORE_TABLE+i*4+1]==0) then
+                [SEMAPHORE_TABLE+i*4]=-1;
+                [SEMAPHORE_TABLE+i*4+1]=1;
+                R0=i;
+                return;
+            endif;
+            i=i+1;
+        endwhile;
+        R0=-1;
+        return;
+endif;
 
+
+//release SEMAPHORE
+if(functionNum==7) then
+    alias currentPID R2;
+    alias semdescr R3;
+    if([SEMAPHORE_TABLE+semdescr*4]==currentPID) then
+        [SEMAPHORE_TABLE+semdescr*4]=-1;
+        alias j R5;
+        j=0;
+        while(j<15) do
+            if([PROCESS_TABLE+j*16+4]==WAIT_SEMAPHORE && [PROCESS_TABLE+j*16+5]==j) then
+                [PROCESS_TABLE+j*16+4]=READY;
+            endif;
+            j=j+1;
+        endwhile;
+        [SEMAPHORE_TABLE+semdescr*4+1]=[SEMAPHORE_TABLE+semdescr*4+1]-1;
+    endif;
+            
+    return;
+endif;
+
+//acquire terminal
 if(functionNum==8) then
     while([TERMINAL_STATUS_TABLE] ==1) do
         [PROCESS_TABLE +currentPID *16 +4]=WAIT_TERMINAL;

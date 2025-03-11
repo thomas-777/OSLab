@@ -1,0 +1,68 @@
+breakpoint;
+alias userSP R0;
+userSP=SP;
+alias systemcallno R1;
+systemcallno=[[PTBR + 2*((userSP-5)/512)]*512 + (userSP-5)%512];
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = systemcallno;
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13] = SP;
+SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11] * 512 - 1;
+alias semdescr R2;
+semdescr=[[PTBR+2*((userSP-4)/512)]*512 + (userSP-4)%512];
+if(semdescr<0 || semdescr >7 || [[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+2*semdescr]!=SEMAPHORE) then
+    [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-1;
+    [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+    SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13];
+    ireturn;
+endif;
+
+alias semID R5;
+semID=[[PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+11]*512+RESOURCE_TABLE_OFFSET+semdescr*2+1];
+//semlock
+if(systemcallno==19) then
+    while([SEMAPHORE_TABLE+semID*4]!=-1 && [SEMAPHORE_TABLE+semID*4]!=[SYSTEM_STATUS_TABLE+1] ) do
+        [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+4]=WAIT_SEMAPHORE;
+        [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+5]=semID;
+
+        multipush(R0,R1,R2,R5);
+
+        call MOD_5;
+
+        multipop(R0,R1,R2,R5);
+    endwhile;
+
+    [SEMAPHORE_TABLE+semID*4]=[SYSTEM_STATUS_TABLE+1];
+    
+endif;
+
+//SEM UNLOCK
+if(systemcallno==20) then
+    if([SEMAPHORE_TABLE+semID*4]!=-1) then
+        if([SEMAPHORE_TABLE+semID*4]!=[SYSTEM_STATUS_TABLE+1]) then
+            [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-2;
+            [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+            SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13];
+            ireturn;
+        endif;
+   
+
+        [SEMAPHORE_TABLE+semID*4]=-1;
+
+        alias i R3;
+        i=0;
+        while(i<16) do
+            if([PROCESS_TABLE+i*16+4]==WAIT_SEMAPHORE && [PROCESS_TABLE+i*16+5]==semID) then
+                [PROCESS_TABLE+i*16+4]=READY;
+                [PROCESS_TABLE+i*16+5]=-1;
+            endif;
+            i=i+1;
+        endwhile;
+    endif;
+endif;
+
+[[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
+[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13];
+breakpoint;
+ireturn;
+
+

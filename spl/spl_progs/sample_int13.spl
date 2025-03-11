@@ -1,0 +1,64 @@
+breakpoint;
+alias userSP R0;
+userSP=SP;
+alias systemcallno R1;
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13]=SP;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512-1;
+systemcallno=[[PTBR+2*((userSP-5)/512)]*512 + (userSP-5)%512];
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=systemcallno;
+
+//Semget
+if(systemcallno==17) then
+
+//find free per process table entry
+    alias i R2;
+    i=0;
+    while([[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+i]!=-1 && i<8) do
+        i=i+2;
+    endwhile;
+
+    if(i==8) then
+        [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-1;
+    else
+        alias semtableentry R3;
+        multipush(R0,R1,R2);
+
+        R1=6;
+        R2=[SYSTEM_STATUS_TABLE+1]; 
+        call MOD_0;
+        semtableentry=R0;
+        multipop(R0,R1,R2);
+
+
+        [[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+i]=1;
+        [[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+i+1]=semtableentry;
+        [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=i;
+    endif;
+endif;
+
+//semrelease
+if(systemcallno==18) then
+    alias semdescr R2;
+    semdescr=[[PTBR+2*((userSP-4)/512)]*512 + (userSP-4)%512];
+
+    if(semdescr>7 || semdescr <0 || [[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+semdescr]==-1) then
+        [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-1;
+    else
+        multipush(R0,R1,R2);
+        R1=7;
+        R2=[SYSTEM_STATUS_TABLE+1];
+        R3=semdescr;
+        call MOD_0;
+        multipop(R0,R1,R2);
+        [[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+semdescr]=-1;
+        [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
+    endif;
+endif;
+
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+breakpoint;
+ireturn;
+
+
+

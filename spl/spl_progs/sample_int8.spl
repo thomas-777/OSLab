@@ -16,33 +16,37 @@ newPid=R0;
 
 //IF pid not available
 if(newPid==-1) then
-    R0=-1;
-    [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+    alias userSP R3;
+    userSP=[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13];
+    [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+    [[PTBR + 2 * ((userSP - 1)/512)] * 512 + (userSP - 1) % 512] = -1;
+    SP = [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13];
     ireturn;
 endif;
-breakpoint;
 alias currentPID R3;
 currentPID=[SYSTEM_STATUS_TABLE+1];
 
 //If heap is not yet allocated
-if([PAGE_TABLE_BASE+20*currentPID+4]==-1) then
+if([PTBR+4]==-1) then
     multipush(R2,R3);
     R1=1;
     call MOD_2;
+    
+    [PTBR+4]=R0;
+    [PTBR+5]="0110";
     multipop(R2,R3);
-    [PAGE_TABLE_BASE+20*currentPID+4]=R0;
-    [PAGE_TABLE_BASE+20*currentPID+5]="0110";
     
 
     multipush(R2,R3);
     R1=1;
     call MOD_2;
+    
+    [PTBR+6]=R0;
+    [PTBR+7]="0110";
      multipop(R2,R3);
-    [PAGE_TABLE_BASE+20*currentPID+6]=R0;
-    [PAGE_TABLE_BASE+20*currentPID+7]="0110";
    
 endif;
-breakpoint;
+
 //stack for child process
 multipush(R2,R3);
 R1=1;
@@ -58,7 +62,6 @@ multipop(R2,R3);
 [PAGE_TABLE_BASE + newPid*20 + 18]=R0;
 [PAGE_TABLE_BASE + newPid*20 + 19]="0110";
 
-breakpoint;
 
 //user area page for child
 multipush(R2,R3);
@@ -68,44 +71,38 @@ multipop(R2,R3);
 [PROCESS_TABLE + newPid*16 + 11]=R0;
 
 
-//copy contents of the parent process
-alias userID R4;
-alias swapflag R5;
-alias userareaswapstatus R6;
-alias inode_index R7;
-alias uptr R8;
-userID=[PROCESS_TABLE + currentPID*16 + 3];
-swapflag=[PROCESS_TABLE + currentPID*16 + 6];
-userareaswapstatus=[PROCESS_TABLE + currentPID*16 + 10];
-inode_index=[PROCESS_TABLE + currentPID*16 + 7];
-uptr=[PROCESS_TABLE + currentPID*16 + 13];
-[PROCESS_TABLE + newPid*16 + 3]=userID;
-[PROCESS_TABLE + newPid*16 + 6]=swapflag;
-[PROCESS_TABLE + newPid*16 + 10]=userareaswapstatus;
-[PROCESS_TABLE + newPid*16 + 7]=inode_index;
-[PROCESS_TABLE + newPid*16 + 13]=uptr;
+alias parentprotable R9;
+alias childprotable R10;
+childprotable=PROCESS_TABLE + newPid*16 ;
+parentprotable=PROCESS_TABLE + currentPID*16;
+[childprotable + 3]=[parentprotable + 3];
+[childprotable + 6]=[parentprotable + 6];
+[childprotable + 10]=[parentprotable + 10];
+[childprotable + 7]=[parentprotable + 7];
+[childprotable + 13]=[parentprotable + 13];
 
 
 //setup process table for child
-[PROCESS_TABLE + newPid*16 + 9]=0;
+[childprotable + 9]=0;
 //TICK
-[PROCESS_TABLE + newPid*16 + 0]=0;
+[childprotable + 0]=0;
 //KPTR
-[PROCESS_TABLE + newPid*16 + 12]=0;
+[childprotable + 12]=0;
 //PPID
-[PROCESS_TABLE + newPid*16 + 2]=currentPID;
-[PROCESS_TABLE + newPid * 16 + 4] = CREATED;
-
+[childprotable + 2]=currentPID;
+[childprotable + 4] = CREATED;
 
 // initialization per process resourse table child
 alias i R4;
-i = 512 - 16;
+i = RESOURCE_TABLE_OFFSET;
 while (i < 512) do
-    [[PROCESS_TABLE + newPid * 16 + 11] * 512 + i] = [[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 11] * 512 + i];
-    i = i + 1;
+    [[childprotable + 11] * 512 + i] = [[parentprotable + 11] * 512 + i];
+    if([[childprotable + 11] * 512 + i]==SEMAPHORE)  then
+        [SEMAPHORE_TABLE+[[childprotable+11]*512+i+1]*4+1]=[SEMAPHORE_TABLE+[[childprotable+11]*512+i+1] *4+1]+1;
+    endif;
+    i = i + 2;
 endwhile;
 
-breakpoint;
 // initialization per process DISK MAP table child
 i = 2;
 while (i < 10) do
@@ -119,12 +116,11 @@ while(i<16) do
     [PAGE_TABLE_BASE + newPid*20 + i] = [PAGE_TABLE_BASE + currentPID*20 + i];
     [PAGE_TABLE_BASE + newPid*20 + i+1] = [PAGE_TABLE_BASE + currentPID*20 + i+1];
     if([PAGE_TABLE_BASE + newPid*20 + i]!=-1) then
-        [MEMORY_FREE_LIST + [PAGE_TABLE_BASE + newPid*20 + i]*2] = [MEMORY_FREE_LIST + [PAGE_TABLE_BASE + newPid*20 + i]*2]+1;
+        [MEMORY_FREE_LIST + [PAGE_TABLE_BASE + newPid*20 + i]] = [MEMORY_FREE_LIST + [PAGE_TABLE_BASE + newPid*20 + i]]+1;
     endif;
     i=i+2;
 
 endwhile;
-breakpoint;
 //copy stac contenrts
 alias oldStack R5;
 alias newStack R6;
@@ -147,16 +143,14 @@ endwhile;
 
 //push bp to the child kernel stack
 [[PROCESS_TABLE + newPid * 16 + 11] * 512] = BP;
-[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
-
-breakpoint;
-//Return values
+[parentprotable + 9] = 0;
+//Return values 
 alias userSP R7;
-userSP=[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13];
+userSP=[parentprotable + 13];
 [[PAGE_TABLE_BASE+20*currentPID + 2 * ((userSP - 1) / 512)] * 512 + (userSP - 1) % 512] = newPid;
 [[PAGE_TABLE_BASE+20*newPid + 2 * ((userSP - 1) / 512)] * 512 + (userSP - 1) % 512] = 0;
 
-SP=[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 13];
+SP=[parentprotable + 13];
 breakpoint;
 ireturn;
 
