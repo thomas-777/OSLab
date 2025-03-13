@@ -77,4 +77,33 @@ if(functionNum==2) then
     return;
 endif;
 
+//disk storee
+if(functionNum==1) then
+    alias pagenumber R3;
+    alias blocknumber R4;
+
+    multipush(R1,R2,R3,R4);
+    R1=3;
+    R2=currentPID;
+    call MOD_0;
+
+    multipop(R1,R2,R3,R4);
+
+    [DISK_STATUS_TABLE+1]=1;
+    [DISK_STATUS_TABLE+2]=pagenumber;
+    [DISK_STATUS_TABLE+3]=blocknumber;
+
+    store(pagenumber,blocknumber);
+
+    [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+4]=WAIT_DISK;
+
+    multipush(R1,R2,R3,R4);
+
+    call MOD_5;
+
+    multipop(R1,R2,R3,R4);
+    
+    return;
+endif;
+
 

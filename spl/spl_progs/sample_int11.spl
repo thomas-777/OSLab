@@ -7,7 +7,7 @@ userSP=SP;
 SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512-1;
 systemcallno=[[PTBR+2*((userSP-5)/512)]*512 + (userSP-5)%512];
 [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=systemcallno;
-breakpoint;
+
 //getpid
 if(systemcallno==11) then
     [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512] = [SYSTEM_STATUS_TABLE+1];
@@ -57,5 +57,5 @@ endif;
 [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
 SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
 
-breakpoint;
+
 ireturn;

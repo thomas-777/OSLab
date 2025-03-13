@@ -60,7 +60,7 @@ endif;
 
 //get code page
 if(functNum==5) then
-breakpoint;
+
     alias blockNum R2;
     alias i R3;
     alias j R4;
@@ -95,7 +95,6 @@ breakpoint;
     R4 = blockNum;
     R2 = [SYSTEM_STATUS_TABLE + 1];
     R3 = pageNum;
-    breakpoint;
     call MOD_4;
     multipop(R1,R2,R5);
     R0=pageNum;

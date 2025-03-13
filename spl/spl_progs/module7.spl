@@ -87,11 +87,17 @@ loadi(29,42);
 loadi(30,43);
 loadi(31,44);
 
+//int 4
+loadi(10,23);
+loadi(11,24);
+
 //initialize disk status table
 [DISK_STATUS_TABLE]=0;
 
 
 
+//USERID
+[PROCESS_TABLE+1*16+3]=1;
 
 
 alias i R0;
@@ -199,7 +205,6 @@ while (i < 16) do
     i = i + 1;
 endwhile;
 
-return;
 
 //semaphore table initialization
 // initialization of semaphore table
@@ -209,3 +214,21 @@ while (i < MAX_SEM_COUNT) do
     [SEMAPHORE_TABLE + i * 4 + 1] = 0;
     i = i + 1;
 endwhile;
+
+// initialization of file status table
+i = 0;
+while (i < MAX_FILE_NUM) do
+    [FILE_STATUS_TABLE + i * 4 + 0] = -1;
+    [FILE_STATUS_TABLE + i * 4 + 1] = -1;
+    i = i + 1;
+endwhile;
+// initialization of buffer table
+i = 0;
+while (i < MAX_BUFFER) do
+    [BUFFER_TABLE + i * 4 + 0] = -1;
+    [BUFFER_TABLE + i * 4 + 1] = 0;
+    [BUFFER_TABLE + i * 4 + 2] = -1;
+    i = i + 1;
+endwhile;
+return;
+

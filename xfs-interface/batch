@@ -21,5 +21,6 @@ load --int=11 ../spl/spl_progs/sample_int11.xsm
 load --int=15 ../spl/spl_progs/sample_int15.xsm
 load --int=13 ../spl/spl_progs/sample_int13.xsm
 load --int=14 ../spl/spl_progs/sample_int14.xsm
+load --int=4 ../spl/spl_progs/sample_int4.xsm
 exit
 
