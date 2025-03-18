@@ -3,28 +3,66 @@
 alias functionNum R1;
 alias currentPID R2;
 
+//aquire buffer
+
+if(functionNum==1)  then
+    alias bufferNumber R3;
+
+    while ([BUFFER_TABLE + bufferNumber * 4 + 2] != -1) do
+        [PROCESS_TABLE + currentPID * 16 + 4] = WAIT_BUFFER;
+        [PROCESS_TABLE + currentPID * 16 + 5] = bufferNumber;
+
+        multipush(R1, R2, R3);
+        call MOD_5;
+        multipop(R1, R2, R3);
+    endwhile;
+    [BUFFER_TABLE + bufferNumber * 4 + 2] = currentPID;
+    return;
+
+endif;
+
+//relese buffer
+
+if(functionNum==2) then
+    alias bufferNumber R3;
+    if (currentPID != [BUFFER_TABLE + bufferNumber * 4 + 2]) then
+        R0 = -1;
+    else
+        [BUFFER_TABLE + bufferNumber * 4 + 2] = -1;
+        alias i R4;
+        i = 0;
+        while (i < 16) do
+            if ([PROCESS_TABLE + i * 16 + 4] == WAIT_BUFFER && [PROCESS_TABLE + i * 16 + 5] == bufferNumber) then
+                [PROCESS_TABLE + i * 16 + 4] = READY;
+            endif;
+            i = i + 1;
+        endwhile;
+
+        R0 = 0;
+    endif;
+    return;
+endif;
+
 
 //acquire inode
 if(functionNum==4) then
-    alias inodeindex R3;
+    alias inodeNumber R3;
 
-    while([FILE_STATUS_TABLE+4*inodeindex]!=-1) do
- 
-        [ PROCESS_TABLE+currentPID*16+4]=WAIT_FILE;
-        [PROCESS_TABLE+currentPID*16+5]=inodeindex;
-        multipush(R1,R2,R3);
-
+    while ([FILE_STATUS_TABLE + inodeNumber * 4 + 0] != -1) do
+        [PROCESS_TABLE + currentPID * 16 + 4] = WAIT_FILE;
+        [PROCESS_TABLE + currentPID * 16 + 5] = inodeNumber;
+        multipush(R1, R2, R3);
         call MOD_5;
-
-        multipop(R1,R2,R3);
+        multipop(R1, R2, R3);
     endwhile;
-    if([INODE_TABLE+16*inodeindex+1]==-1) then
-        R0=-1;
-        return;
-    endif;
 
-    [FILE_STATUS_TABLE+4*inodeindex]=[SYSTEM_STATUS_TABLE+1];
-    R0=0;
+    // file delete check
+    if ([INODE_TABLE + inodeNumber * 16 + 1] == -1) then
+        R0 = -1;
+    else 
+        [FILE_STATUS_TABLE + inodeNumber * 4 + 0] = currentPID;
+        R0 = 0;
+    endif;
     return;
 endif;
 
@@ -82,9 +120,10 @@ if(functionNum==7) then
         [SEMAPHORE_TABLE+semdescr*4]=-1;
         alias j R5;
         j=0;
-        while(j<15) do
+        while(j<16) do
             if([PROCESS_TABLE+j*16+4]==WAIT_SEMAPHORE && [PROCESS_TABLE+j*16+5]==j) then
                 [PROCESS_TABLE+j*16+4]=READY;
+                [PROCESS_TABLE+j*16+5]=-1;
             endif;
             j=j+1;
         endwhile;
@@ -112,6 +151,7 @@ if(functionNum==8) then
 
 endif;
 
+//release terminal
 if(functionNum==9) then 
     if(currentPID==[TERMINAL_STATUS_TABLE+1]) then
         [TERMINAL_STATUS_TABLE]=0;

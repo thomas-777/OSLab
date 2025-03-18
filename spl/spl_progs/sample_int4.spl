@@ -1,5 +1,4 @@
 //create and delete 
-breakpoint;
 [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+13]=SP;
 
 alias userSP R0;
@@ -137,7 +136,6 @@ endif;
 [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
 [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+9]=0;
 SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
-breakpoint;
 ireturn;
     
 

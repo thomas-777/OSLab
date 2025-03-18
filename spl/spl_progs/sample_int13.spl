@@ -1,4 +1,3 @@
-breakpoint;
 alias userSP R0;
 userSP=SP;
 alias systemcallno R1;
@@ -57,7 +56,6 @@ endif;
 
 [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
 SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
-breakpoint;
 ireturn;
 
 

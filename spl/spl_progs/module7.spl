@@ -91,6 +91,14 @@ loadi(31,44);
 loadi(10,23);
 loadi(11,24);
 
+//int 5
+loadi(12,25);
+loadi(13,26);
+
+//module 3
+loadi(46,59);
+loadi(47,60);
+
 //initialize disk status table
 [DISK_STATUS_TABLE]=0;
 
@@ -111,12 +119,7 @@ while (i < 128) do
     i = i + 1;
 endwhile;
 
-// per-process resource table for init
-i = 1;
-while (i < 9) do
-    [([PROCESS_TABLE + 16 + 11] + 1) * 512 - 2 * i] = -1;
-    i = i + 1;
-endwhile;
+
 
 [SYSTEM_STATUS_TABLE + 0] = 1;
 [SYSTEM_STATUS_TABLE + 2] = 45;
@@ -197,8 +200,12 @@ PTLR=10;
 
 [76*512] = [65 * 512 + 1];
 
-
-
+// per-process resource table for init
+i = 1;
+while (i < 9) do
+    [([PROCESS_TABLE + 16 + 11] + 1) * 512 - 2 * i] = -1;
+    i = i + 1;
+endwhile;
 i = 2;
 while (i < 16) do
     [PROCESS_TABLE + i * 16 + 4] = TERMINATED;
@@ -230,5 +237,14 @@ while (i < MAX_BUFFER) do
     [BUFFER_TABLE + i * 4 + 2] = -1;
     i = i + 1;
 endwhile;
+
+//open file table
+i=0;
+while(i<(MAX_OPENFILE_NUM)) do
+    [OPEN_FILE_TABLE+i*4]=-1;
+    [OPEN_FILE_TABLE+i*4+1]=0;
+    i=i+1;
+endwhile;
+
 return;
 

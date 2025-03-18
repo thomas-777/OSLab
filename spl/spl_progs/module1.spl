@@ -2,7 +2,7 @@
 
 alias functNum R1;
 alias currentPID R2;
-
+breakpoint;
 //GET PCB ENTRY
 if(functNum==1) then
     alias i R2;
@@ -64,7 +64,7 @@ if(functNum==2) then
     alias userareapage R3;
     userareapage=[PROCESS_TABLE+16*currentPID+11];
     alias i R4;
-    i = 512 - 16;
+    i = RESOURCE_TABLE_OFFSET;
     while (i < 512) do
         if([userareapage*512+i]==SEMAPHORE) then
             multipush(R1,R2,R3,R4);
@@ -73,6 +73,14 @@ if(functNum==2) then
             R3=[userareapage*512+i+1];
         
             call MOD_0;
+            multipop(R1,R2,R3,R4);
+        endif;
+        if([userareapage*512+i]==FILE) then
+            multipush(R1,R2,R3,R4);
+            R1=4;
+            R2=[userareapage*512+i+1];
+            breakpoint;
+            call MOD_3;
             multipop(R1,R2,R3,R4);
         endif;
         i=i+2; 

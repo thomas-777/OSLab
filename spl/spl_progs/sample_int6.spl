@@ -10,24 +10,12 @@ userSP = SP;
 
 SP=[PROCESS_TABLE +currentPID *16 +11] *512-1;
 
-alias physicalPageNum R2;
-alias offset R3;
-alias fileDescPhysicalAddr R4;
+alias fileDescriptor R2;
+R2=[[PTBR+2*((userSP-4)/512)]*512 + (userSP-4)%512];
+breakpoint;
 
-
-physicalPageNum=[PTBR + 2*((userSP-4)/512)];
-offset=(userSP-4)%512;
-fileDescPhysicalAddr=(physicalPageNum*512)+offset;
-
-alias fileDescriptor R5;
-fileDescriptor=[fileDescPhysicalAddr];
-
-if(fileDescriptor != -1) then
-    
-    alias physicalAddrRetVal R6;
-	physicalAddrRetVal =([PTBR +2 *((userSP -1)/512)]* 512) + ((userSP -1)% 512);
-	[physicalAddrRetVal] = -1;
-else
+//TERMINAL READ
+if(fileDescriptor == -1) then
     alias wordaddress R6;
     wordaddress=([PTBR +2 *((userSP -3)/512)]* 512) + ((userSP -3)% 512);
     multipush(R0,R1,R2,R3,R4,R5,R6,R7);
@@ -42,13 +30,90 @@ else
     call MOD_4;
 
     multipop(R0,R1,R2,R3,R4,R5,R6,R7);
-    physicalPageNum = [PTBR + 2 * ((userSP - 1) / 512)];
-    offset = (userSP - 1) % 512;
-    [physicalPageNum * 512 + offset] = 0;
-endif;
+    [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
+else
+    //file READ
+    if(fileDescriptor<0 || fileDescriptor>7) then
+        [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-1;
+        [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 +9]=0;
+        SP=userSP;
+        ireturn;
+    endif;
+    alias resourcetableentry R3;
+    R3=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+fileDescriptor;
+    if([resourcetableentry]!=FILE || [resourcetableentry+1]==-1) then
+        [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-1;
+        [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 +9]=0;
+        SP=userSP;
+        ireturn;
+    endif;
+    alias openfiletableentry R4;
+    openfiletableentry=[resourcetableentry+1];
+    alias inode_index R5;
+    inode_index=[OPEN_FILE_TABLE+4*openfiletableentry];
 
+    //aquire inode
+    multipush(R0,R1,R2,R3,R4,R5);
+    R1=4;
+    R2=[SYSTEM_STATUS_TABLE+1];
+    R3=inode_index;
+    call MOD_0;
+    multipop(R0,R1,R2,R3,R4,R5);
+
+    alias lseek R6;
+    lseek=OPEN_FILE_TABLE+4*openfiletableentry+2;
+    alias wordaddress R7;
+    wordaddress = [[PTBR + 2 * ((userSP - 3) / 512)] * 512 + (userSP - 3) % 512];
+    wordaddress = [PTBR + 2 * (wordaddress / 512)] * 512 + wordaddress % 512;
+    if(inode_index==INODE_ROOT) then
+        if([lseek]==480) then
+            //release inode
+            multipush(R0,R1,R2,R3,R4,R5,R6,R7);
+            R1=5;
+            R2=currentPID;
+            R3=inode_index;
+            call MOD_0;
+            multipop(R0,R1,R2,R3,R4,R5,R6,R7);
+            [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-2;
+        else
+            [wordaddress]=[ROOT_FILE+[lseek]];
+            [lseek]=[lseek]+1;
+            [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
+        endif;
+    else
+        //iff lseek is at  teh end of teh file
+        if([lseek]==[INODE_TABLE+inode_index*16+2]) then
+            [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-2;
+        else
+            alias blockNum R9;
+            blockNum=[INODE_TABLE+inode_index*16+8+[lseek]/512];
+            alias offset R8;
+            offset=[lseek]%512;
+            //calll buffer_read
+            backup;
+            R1=2;
+            R2=blockNum;
+            R3=offset;
+            R4=wordaddress;
+            call MOD_3;
+            restore;
+            [lseek]=[lseek]+1;
+            [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
+        endif;
+    endif; 
+
+    //release inoide    
+    backup;
+    R1=5;
+    R3=inode_index;
+    R2=[SYSTEM_STATUS_TABLE+1];
+    call MOD_0;
+    restore;
+
+endif;
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE+1]*16 +9]=0;
 SP=userSP;
+breakpoint;
 ireturn;
 
 

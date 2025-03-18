@@ -94,10 +94,18 @@ parentprotable=PROCESS_TABLE + currentPID*16;
 // initialization per process resourse table child
 alias i R4;
 i = RESOURCE_TABLE_OFFSET;
+alias entry R5;
+entry=childprotable+11;
+alias parentry R6;
+parentry = parentprotable+11;
 while (i < 512) do
-    [[childprotable + 11] * 512 + i] = [[parentprotable + 11] * 512 + i];
-    if([[childprotable + 11] * 512 + i]==SEMAPHORE)  then
-        [SEMAPHORE_TABLE+[[childprotable+11]*512+i+1]*4+1]=[SEMAPHORE_TABLE+[[childprotable+11]*512+i+1] *4+1]+1;
+    [[entry] * 512 + i] = [[parentry] * 512 + i];
+    [[entry] * 512 + i+1] = [[parentry] * 512 + i+1];
+    if([[entry] * 512 + i]==SEMAPHORE)  then
+        [SEMAPHORE_TABLE+[[entry]*512+i+1]*4+1]=[SEMAPHORE_TABLE+[[entry]*512+i+1] *4+1]+1;
+    endif;
+    if([[entry] * 512 + i]==FILE)  then
+        [OPEN_FILE_TABLE+[[entry]*512+i+1]*4+1]=[OPEN_FILE_TABLE+[[entry]*512+i+1] *4+1]+1;
     endif;
     i = i + 2;
 endwhile;

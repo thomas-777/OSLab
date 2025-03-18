@@ -1,0 +1,82 @@
+//open and close
+breakpoint;
+[PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+13]=SP;
+
+alias userSP R0;
+userSP=SP;
+
+SP=[PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+11]*512-1;
+
+alias systemcallno R1;
+systemcallno=[[PTBR+2*((userSP-5)/512)]*512 + (userSP-5)%512];
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=systemcallno;
+
+[PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+9]=systemcallno;
+
+
+//open
+if(systemcallno==2) then
+    alias filename R2;
+    filename=[[PTBR+2*((userSP-4)/512)]*512 + (userSP-4)%512];
+    alias i R3;
+    i=0;
+    //find resouurce table entry
+    while([[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+i]!=-1 && i<8) do
+        i=i+2;
+    endwhile;
+
+    if(i==8) then
+        [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-3;
+    else
+        //calll open function to allocate open file table and file status table 
+        alias openfiletableentry R4;
+        multipush(R0,R1,R2,R3);
+        R1=3;
+        R2=filename;
+        call MOD_3;
+        R4=R0;
+        multipop(R0,R1,R2,R3);
+
+        if(R4==-1) then
+            [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=R4;
+        else
+
+            [[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+i]=FILE;
+            [[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+i+1]=R4;
+            [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
+        endif;
+    endif;
+endif;
+
+
+//close
+if(systemcallno==3) then
+    alias filedescr R2;
+    filedescr=[[PTBR+2*((userSP-4)/512)]*512 + (userSP-4)%512];
+    alias resourcetableentry R3;
+    R3=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+filedescr;
+    if(filedescr<0 || filedescr>7 || [resourcetableentry]!=FILE) then
+        [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-1;
+    else
+        alias openfiletableentry R4;
+        R4=[resourcetableentry+1];
+        multipush(R0,R1,R2,R3,R4);
+        R1=4;
+        R2=R4;
+        call MOD_3;
+        multipop(R0,R1,R2,R3,R4);
+
+        [resourcetableentry]=-1;
+        [resourcetableentry+1]=-1;
+        [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
+    endif;
+endif;
+
+
+
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+breakpoint;
+ireturn;
+
+
