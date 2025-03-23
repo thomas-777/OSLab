@@ -18,7 +18,7 @@ alias filefound R10;
 filefound=0;
 alias i R4;
 i=0;
-
+breakpoint;
 //FIND THE INODE INDEX
 while([INODE_TABLE+16*i+1]!=-1 && [INODE_TABLE+16*i+1]!=filename) do
     i=i+1;
@@ -32,7 +32,7 @@ endwhile;
 if([INODE_TABLE+16*i+1]==filename) then
     filefound=1;
 endif;
-
+breakpoint;
 //CREATE
 if(systemcallno==1) then
     if(filefound==1) then
@@ -50,7 +50,7 @@ if(systemcallno==1) then
     [ROOT_FILE+8*i]=filename;
     [ROOT_FILE+8*i+2]=DATA;
     [ROOT_FILE+8*i+1]=0;
-    [ROOT_FILE+8*i+3]=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*8+3];
+    [ROOT_FILE+8*i+3]=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+3];
     [ROOT_FILE+8*i+4]=permission;
     [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
 endif;
@@ -65,16 +65,16 @@ if(systemcallno==4) then
     endif;
     backup;
     R1=4;
-    R3=i;
-    R2=[SYSTEM_STATUS_TABLE+1];
+    R2=i;
+    R3=[SYSTEM_STATUS_TABLE+1];
     call MOD_0;
     restore;
 
      if ([FILE_STATUS_TABLE + i * 4 + 1] != -1) then // file is open
         backup;
         R1 = 5;
-        R3 = i;
-        R2 = [SYSTEM_STATUS_TABLE + 1];
+        R2 = i;
+        R3 = [SYSTEM_STATUS_TABLE + 1];
         call MOD_0;
         restore;
         [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-2;
@@ -125,8 +125,8 @@ if(systemcallno==4) then
     //RELEASE INODE 
     backup;
     R1=5;
-    R2=[SYSTEM_STATUS_TABLE+1];
-    R3=i;
+    R3=[SYSTEM_STATUS_TABLE+1];
+    R2=i;
     call MOD_0;
     restore;
 endif;
@@ -136,6 +136,7 @@ endif;
 [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
 [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+9]=0;
 SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+breakpoint;
 ireturn;
     
 

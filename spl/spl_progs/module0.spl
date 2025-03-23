@@ -1,12 +1,12 @@
 //resource manager module
 
 alias functionNum R1;
-alias currentPID R2;
+alias currentPID R3;
 
 //aquire buffer
 
 if(functionNum==1)  then
-    alias bufferNumber R3;
+    alias bufferNumber R2;
 
     while ([BUFFER_TABLE + bufferNumber * 4 + 2] != -1) do
         [PROCESS_TABLE + currentPID * 16 + 4] = WAIT_BUFFER;
@@ -24,8 +24,8 @@ endif;
 //relese buffer
 
 if(functionNum==2) then
-    alias bufferNumber R3;
-    if (currentPID != [BUFFER_TABLE + bufferNumber * 4 + 2]) then
+    alias bufferNumber R2;
+    if ([SYSTEM_STATUS_TABLE+1] != [BUFFER_TABLE + bufferNumber * 4 + 2]) then
         R0 = -1;
     else
         [BUFFER_TABLE + bufferNumber * 4 + 2] = -1;
@@ -46,7 +46,7 @@ endif;
 
 //acquire inode
 if(functionNum==4) then
-    alias inodeNumber R3;
+    alias inodeNumber R2;
 
     while ([FILE_STATUS_TABLE + inodeNumber * 4 + 0] != -1) do
         [PROCESS_TABLE + currentPID * 16 + 4] = WAIT_FILE;
@@ -55,7 +55,6 @@ if(functionNum==4) then
         call MOD_5;
         multipop(R1, R2, R3);
     endwhile;
-
     // file delete check
     if ([INODE_TABLE + inodeNumber * 16 + 1] == -1) then
         R0 = -1;
@@ -68,7 +67,7 @@ endif;
 
 //release inode
 if(functionNum==5) then
-    alias inodeindex R3;
+    alias inodeindex R2;
     if([FILE_STATUS_TABLE+4*inodeindex]!=[SYSTEM_STATUS_TABLE+1]) then
         R0=-1;
         return;
@@ -95,7 +94,6 @@ endif;
 
 //ACQUIRE SEMAPHORE
 if(functionNum==6) then 
-        alias currentPID R2;
         alias i R3;
         i=0;
         while(i<32) do
@@ -114,8 +112,8 @@ endif;
 
 //release SEMAPHORE
 if(functionNum==7) then
-    alias currentPID R2;
-    alias semdescr R3;
+    alias currentPID R3;
+    alias semdescr R2;
     if([SEMAPHORE_TABLE+semdescr*4]==currentPID) then
         [SEMAPHORE_TABLE+semdescr*4]=-1;
         alias j R5;
@@ -136,7 +134,7 @@ endif;
 //acquire terminal
 if(functionNum==8) then
     while([TERMINAL_STATUS_TABLE] ==1) do
-        [PROCESS_TABLE +currentPID *16 +4]=WAIT_TERMINAL;
+        [PROCESS_TABLE +[SYSTEM_STATUS_TABLE+1] *16 +4]=WAIT_TERMINAL;
         multipush(R1,R2);
         
         call MOD_5;
@@ -145,7 +143,7 @@ if(functionNum==8) then
     endwhile;
 
     [TERMINAL_STATUS_TABLE]=1;
-    [TERMINAL_STATUS_TABLE +1]=currentPID;
+    [TERMINAL_STATUS_TABLE +1]=[SYSTEM_STATUS_TABLE+1];
 
     return;
 
@@ -153,7 +151,7 @@ endif;
 
 //release terminal
 if(functionNum==9) then 
-    if(currentPID==[TERMINAL_STATUS_TABLE+1]) then
+    //if(currentPID==[TERMINAL_STATUS_TABLE+1]) then
         [TERMINAL_STATUS_TABLE]=0;
         alias i R3;
         i=0;
@@ -167,18 +165,18 @@ if(functionNum==9) then
         alias returnValue R0;
         returnValue=0;
         return;
-    else
-        alias returnValue R0;
-        returnValue =-1;
-        return;
-    endif;
+    // else
+    //     alias returnValue R0;
+    //     returnValue =-1;
+    //     return;
+    // endif;
 
 endif; 
 
 //aquire disk
 if(functionNum==3) then
     while([DISK_STATUS_TABLE]==1) do
-        [PROCESS_TABLE+currentPID*16+4]=WAIT_DISK;
+        [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+4]=WAIT_DISK;
         multipush(R1,R2);
 
         call MOD_5;
@@ -187,7 +185,7 @@ if(functionNum==3) then
     endwhile;
 
     [DISK_STATUS_TABLE]=1;
-    [DISK_STATUS_TABLE+4]=currentPID;
+    [DISK_STATUS_TABLE+4]=[SYSTEM_STATUS_TABLE+1];
 
     return;
 endif;

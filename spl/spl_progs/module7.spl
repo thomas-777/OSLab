@@ -67,6 +67,9 @@ loadi(7,20);
 //disk free list 
 loadi(61,2);
 
+//root file
+loadi(62,5);
+
 //INT8
 loadi(18,31);
 loadi(19,32);

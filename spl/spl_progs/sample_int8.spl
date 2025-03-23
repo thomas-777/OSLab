@@ -96,7 +96,7 @@ alias i R4;
 i = RESOURCE_TABLE_OFFSET;
 alias entry R5;
 entry=childprotable+11;
-alias parentry R6;
+alias parentry R6;  
 parentry = parentprotable+11;
 while (i < 512) do
     [[entry] * 512 + i] = [[parentry] * 512 + i];

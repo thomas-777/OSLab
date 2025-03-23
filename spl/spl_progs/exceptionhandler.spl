@@ -1,20 +1,20 @@
 //exception handler
-breakpoint;
 
+
+
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=-1;
+
+
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13]=SP;
+
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512-1;
+backup;
 alias currentPID R1;
 currentPID=[SYSTEM_STATUS_TABLE+1];
-
-[PROCESS_TABLE+currentPID*16+9]=-1;
-
-
-[PROCESS_TABLE+currentPID*16+13]=SP;
-
-SP=[PROCESS_TABLE+currentPID*16+11]*512-1;
-backup;
 multipush(EIP);
 
 //not page fault
-if((EC!=0) || ( [PROCESS_TABLE+currentPID*16+13]>=(PTLR*512-1))) then
+if((EC!=0) || ( [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13]==(PTLR*512-1))) then
     if (EC == 1) then
         print "Illegal instruction";
     else
@@ -39,18 +39,16 @@ endif;
 if(EPN>3 && EPN<8) then
     alias blockNum R2;
     alias pageNum R5;
-    blockNum=[DISK_MAP_TABLE+currentPID*10+EPN];
+    blockNum=[DISK_MAP_TABLE+[SYSTEM_STATUS_TABLE+1]*10+EPN];
     
-    multipush(R0,R1,R2);
     multipush(EPN);
     R1=5;
     R2=blockNum;
-    R3=currentPID;
-    breakpoint;
+    R3=[SYSTEM_STATUS_TABLE+1];
+    
     call MOD_2;
     multipop(EPN);
     pageNum=R0;
-    multipop(R0,R1,R2);
 
     [PTBR+2*EPN]=pageNum;
     [PTBR+2*EPN+1]="1100";
@@ -77,14 +75,15 @@ if(EPN<=3) then
 
 endif;
 
-[PROCESS_TABLE+currentPID*16+9]=0;
-
 multipop(EIP);
 restore;
-SP=[PROCESS_TABLE+currentPID*16+13];
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
 
 SP=SP+1;
 [[PTBR + 2 * (SP / 512)] * 512 + (SP % 512)] = EIP;
-breakpoint;
+
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+
+
 ireturn;
 

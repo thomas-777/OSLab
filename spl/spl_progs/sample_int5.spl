@@ -11,9 +11,8 @@ alias systemcallno R1;
 systemcallno=[[PTBR+2*((userSP-5)/512)]*512 + (userSP-5)%512];
 [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=systemcallno;
 
-[PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+9]=systemcallno;
 
-
+breakpoint;
 //open
 if(systemcallno==2) then
     alias filename R2;
@@ -36,16 +35,15 @@ if(systemcallno==2) then
         call MOD_3;
         R4=R0;
         multipop(R0,R1,R2,R3);
-
         if(R4==-1) then
             [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=R4;
         else
-
             [[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+i]=FILE;
             [[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+i+1]=R4;
-            [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
+            [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=(i/2); 
         endif;
     endif;
+    breakpoint;
 endif;
 
 
@@ -69,6 +67,65 @@ if(systemcallno==3) then
         [resourcetableentry]=-1;
         [resourcetableentry+1]=-1;
         [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
+    endif;
+endif;
+
+//seek
+if(systemcallno==6) then
+    alias filedesc R2;
+    alias offset R3;
+    filedesc=[[PTBR+2*((userSP-4)/512)]*512 + (userSP-4)%512];
+    offset=[[PTBR+2*((userSP-3)/512)]*512 + (userSP-3)%512];
+    alias resourcetableentry R4;
+    R4=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512+RESOURCE_TABLE_OFFSET+filedesc;
+    alias openfiletableentry R6;
+    R6=[resourcetableentry+1];
+    if(filedesc<0 || filedesc>7) then
+        [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-1;
+    else
+        alias inodeindex R5;
+		R5=[OPEN_FILE_TABLE+ openfiletableentry*4];
+        multipush(R0,R1,R2,R3,R4,R5,R6);
+        R1=4;
+        R3=[SYSTEM_STATUS_TABLE+1];
+        R2=inodeindex;
+        call MOD_0;
+        multipop(R0,R1,R2,R3,R4,R5,R6);
+        
+        alias lseek R8;
+        lseek=[OPEN_FILE_TABLE+openfiletableentry*4+2];
+        alias fileSize R7;
+        if (inodeindex == INODE_ROOT) then
+            fileSize = 480;
+        else
+            fileSize = [INODE_TABLE + inodeindex * 16 + 2];
+        endif;
+        if(lseek+offset<0) then
+            backup;
+            R1=5;
+            R3=[SYSTEM_STATUS_TABLE+1];
+            R2=inodeindex;
+            call MOD_0;
+            restore;
+            [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-2;
+        else
+            if (offset == 0) then
+                [OPEN_FILE_TABLE + 4 * openfiletableentry + 2] = 0;
+            else
+                if (lseek + offset > fileSize) then
+                    [OPEN_FILE_TABLE + 4 * openfiletableentry + 2] = fileSize;
+                else
+                    [OPEN_FILE_TABLE + 4 * openfiletableentry + 2] = lseek + offset;
+                endif;
+            endif;
+            backup;
+            R1=5;
+            R3=[SYSTEM_STATUS_TABLE+1];
+            R2=inodeindex;
+            call MOD_0;
+            restore;
+            [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
+        endif;
     endif;
 endif;
 

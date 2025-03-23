@@ -58,6 +58,27 @@ if(functNum==2) then
     return;
 endif;
 
+//get free block
+// Get free block
+if (functNum == 3) then
+    alias i R2;
+    i = DISK_FREE_AREA;
+    while (i < DISK_SWAP_AREA) do
+        if ([DISK_FREE_LIST + i] == 0) then
+            [DISK_FREE_LIST + i] = 1;
+            break;
+        endif;
+        i = i + 1;
+    endwhile;
+    if (i == DISK_SWAP_AREA) then
+        R0 = -1;
+        return;
+    endif;
+    R0 = i;
+    return;
+endif;
+
+
 //get code page
 if(functNum==5) then
 
@@ -106,5 +127,5 @@ if(functNum==4) then
     alias blockNum R2;
     alias currentPID R3;
     [DISK_FREE_LIST+blockNum]=[DISK_FREE_LIST+blockNum]-1;
-    return;
+    return; 
 endif;

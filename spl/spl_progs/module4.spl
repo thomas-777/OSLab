@@ -36,7 +36,6 @@ if(functionNum==4) then
 
     multipop(R1,R2,R3);
     read;
-
     [PROCESS_TABLE + currentPID * 16 + 4] = WAIT_TERMINAL;
 
     multipush(R1,R2,R3);
@@ -44,7 +43,6 @@ if(functionNum==4) then
     call MOD_5;
 
     multipop(R1,R2,R3);
-
     [[PTBR + 2 * (word / 512)] * 512 + (word % 512)] = [PROCESS_TABLE + currentPID * 16 + 8];
     return;
 
@@ -105,5 +103,4 @@ if(functionNum==1) then
     
     return;
 endif;
-
 

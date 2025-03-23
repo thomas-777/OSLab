@@ -7,30 +7,87 @@ userSP =SP;
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 13] =SP;
 SP=[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11] * 512 - 1;
 
-alias physicalPageNum R1;
-alias offset R2;
-alias fileDescPhysicalAddr R3;
-
-physicalPageNum = [PTBR + 2*((userSP-4)/512)];
-offset = (userSP -4 )% 512;
-fileDescPhysicalAddr =(physicalPageNum *512) +offset;
-
-alias fileDescriptor R4;
-fileDescriptor=[fileDescPhysicalAddr];
-
+alias fileDescriptor R1;
+fileDescriptor=[([PTBR +2 *(userSP -4)/512] *512) + ((userSP-4) % 512)];
 //filedesc should be -2 for terminal 
-if (fileDescriptor !=-2)
-then
-	//return -1;
-	alias physicalAddrRetVal R5;
-	physicalAddrRetVal =([PTBR +2 *((userSP -1)/512)]* 512) + ((userSP -1)% 512);
-	[physicalAddrRetVal] =-1;
+breakpoint;
+if (fileDescriptor !=-2) then
+	//file write
+	if(fileDescriptor<0 || fileDescriptor >7) then
+		[([PTBR +2 *(userSP -1)/512] *512) + ((userSP-1) % 512)]=-1;
+	else
+		alias resourcetableentry R2;
+		R2=[PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+11]*512 + RESOURCE_TABLE_OFFSET + fileDescriptor*2;
+		
+		if([resourcetableentry]!=FILE) then
+			[([PTBR +2 *(userSP -1)/512] *512) + ((userSP-1) % 512)]=-1;
+		else
+			alias openfiletableentry R3;
+			R3=[resourcetableentry+1];
+			alias inodeindex R4;
+			R4=[OPEN_FILE_TABLE+ openfiletableentry*4];
+			alias processentry R10;
+			processentry=PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1];
+			//CHECK THE PERMISSION
+			if([processentry+3]!=1 && [INODE_TABLE+16*inodeindex+4]==EXCLUSIVE &&[INODE_TABLE+16*inodeindex+3]==[processentry+3]) then
+				[([PTBR +2 *(userSP -1)/512] *512) + ((userSP-1) % 512)]=-3;
+			else
+				//aquire inode
+				multipush(R0,R1,R2,R3,R4);
+				R1=4;
+				R3=[SYSTEM_STATUS_TABLE+1];
+				R2=inodeindex;
+				call MOD_0;
+				multipop(R0,R1,R2,R3,R4);
+				alias lseek R5;
+				lseek=[OPEN_FILE_TABLE+openfiletableentry*4+2];
+				//iff new block is required
+				if(lseek%512==0 && [INODE_TABLE+16*inodeindex+2]==lseek) then
+					//calll get free block
+					alias freeblock R6;
+					multipush(R0,R1,R2,R3,R4,R5);
+					R1=3;
+					call MOD_2;
+					R6=R0;
+					multipop(R0,R1,R2,R3,R4,R5);
+
+					//SET THE BLOCK IN THE INODE TABLE
+					[INODE_TABLE+16*inodeindex+8+(lseek/512)]=R6;
+				endif;
+				alias diskblockNum R6;
+				R6=[INODE_TABLE+16*inodeindex+8+(lseek/512)];
+				alias offset R7;
+				offset=lseek%512;
+				alias word R8;
+				R8=[([PTBR +2 *(userSP -3)/512] *512) + ((userSP-3) % 512)];
+				//calll bufferedwrite
+				backup;
+				R1=1;
+				R2=diskblockNum;
+				R3=offset;
+				R4=R8;
+				call MOD_3;
+				restore;
+				//iff lseek is file size increment file size
+				if(lseek==[INODE_TABLE+16*inodeindex+2]) then
+					[INODE_TABLE+16*inodeindex+2]=[INODE_TABLE+16*inodeindex+2]+1;
+					[ROOT_FILE+8*inodeindex+1]=[ROOT_FILE+8*inodeindex+1]+1;
+				endif;
+				[OPEN_FILE_TABLE+openfiletableentry*4+2]=[OPEN_FILE_TABLE+openfiletableentry*4+2]+1;
+				[([PTBR +2 *(userSP -1)/512] *512) + ((userSP-1) % 512)]=0;
+				backup;
+				R1=5;
+				R3=[SYSTEM_STATUS_TABLE+1];
+				R2=inodeindex;
+				call MOD_0;
+				restore;
+			endif;
+		endif;
+	endif;
 else 
-	//arg2 is word to be printed
-	physicalPageNum = [PTBR + 2 * ((userSP - 3) / 512)];
-    offset = (userSP - 3) % 512;
+	
     alias word R5;
-    word = [physicalPageNum * 512 + offset];
+    word = [([PTBR +2 *(userSP -3)/512] *512) + ((userSP-3) % 512)];
 	multipush(R0, R1, R2, R3, R4, R5);
 	alias functionNumber R1;
 	functionNumber=3;
@@ -53,4 +110,5 @@ endif;
 SP=userSP;
 //set mode to 0
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
+breakpoint;
 ireturn;
