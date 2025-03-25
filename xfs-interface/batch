@@ -3,7 +3,7 @@ load --int=timer $HOME/myexpos/spl/spl_progs/sample_timer.xsm
 load --int=console $HOME/myexpos/spl/spl_progs/console_int.xsm
 load --int=disk $HOME/myexpos/spl/spl_progs/disk_int.xsm
 load --idle $HOME/myexpos/expl/expl_progs/idleprog.xsm
-load --init $HOME/myexpos/expl/expl_progs/shellprog.xsm
+load --init $HOME/myexpos/expl/expl_progs/login.xsm
 load --int=7 $HOME/myexpos/spl/spl_progs/sample_int7.xsm
 load --int=6 $HOME/myexpos/spl/spl_progs/sample_int6.xsm
 load --int=8 $HOME/myexpos/spl/spl_progs/sample_int8.xsm
@@ -24,5 +24,9 @@ load --int=15 ../spl/spl_progs/sample_int15.xsm
 load --int=13 ../spl/spl_progs/sample_int13.xsm
 load --int=14 ../spl/spl_progs/sample_int14.xsm
 load --int=4 ../spl/spl_progs/sample_int4.xsm
+load --shell ../expl/expl_progs/ext_shell.xsm
+load --int=12 ../spl/spl_progs/sample_int12.xsm
+load --int=17 ../spl/spl_progs/sample_int17.xsm
+load --int=16 ../spl/spl_progs/sample_int16.xsm
 exit
 

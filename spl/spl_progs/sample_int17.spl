@@ -1,0 +1,66 @@
+//login
+breakpoint;
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=27;
+
+alias userSP R0;
+userSP=SP;
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13]=SP;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512-1;
+
+alias returnaddress R10;
+returnaddress=[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512;
+if([SYSTEM_STATUS_TABLE+1]!=1) then
+    [returnaddress]=-2;
+    [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+    SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+    ireturn;
+endif;
+alias username R1;
+alias password R2;
+
+username=[[PTBR+2*((userSP-4)/512)]*512 + (userSP-4)%512];
+password=[[PTBR+2*((userSP-3)/512)]*512 + (userSP-3)%512];
+
+alias i R3;
+i=0;
+while(i<16) do
+    if([USER_TABLE+i*2]==username) then
+        break;
+    endif;
+    i=i+1;
+endwhile;
+
+if(i==16) then  
+    print "1";
+    [returnaddress]=-1;
+    [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+    SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+    ireturn;
+endif;
+
+encrypt R2;
+
+if([USER_TABLE+i*2+1]!=password) then
+    print "hi";
+    [returnaddress]=-1;
+    [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+    SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+    ireturn;
+endif;
+
+[PROCESS_TABLE+2*16+4]=CREATED;
+
+[PROCESS_TABLE+2*16+3]=i;
+
+[PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+4]=WAIT_PROCESS;
+[PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+5]=2;
+
+[SYSTEM_STATUS_TABLE]=i;
+backup;
+call MOD_5;
+restore;
+
+[returnaddress]=0;
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+ireturn;

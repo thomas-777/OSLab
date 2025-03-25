@@ -10,7 +10,7 @@ SP=[PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1]*16 + 11] * 512 - 1;
 alias fileDescriptor R1;
 fileDescriptor=[([PTBR +2 *(userSP -4)/512] *512) + ((userSP-4) % 512)];
 //filedesc should be -2 for terminal 
-breakpoint;
+
 if (fileDescriptor !=-2) then
 	//file write
 	if(fileDescriptor<0 || fileDescriptor >7) then
@@ -110,5 +110,5 @@ endif;
 SP=userSP;
 //set mode to 0
 [PROCESS_TABLE + [SYSTEM_STATUS_TABLE + 1] * 16 + 9] = 0;
-breakpoint;
+
 ireturn;

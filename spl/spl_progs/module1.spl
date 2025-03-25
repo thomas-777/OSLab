@@ -98,17 +98,18 @@ endif;
 
 //free page table
 if(functNum==4) then
-
-    [PTBR + 0] = -1;
-    [PTBR + 1] = "0000";
-    [PTBR + 2] = -1;
-    [PTBR + 3] = "0000";
+    alias pageTableEntry R4;
+    pageTableEntry = PAGE_TABLE_BASE + currentPID * 20;
+    [pageTableEntry + 0] = -1;
+    [pageTableEntry + 1] = "0000";
+    [pageTableEntry + 2] = -1;
+    [pageTableEntry + 3] = "0000";
 
     alias i R3;
     alias pageNum R4;
     i=1;
     while(i<(PTLR-1)) do
-        pageNum=[PTBR + 2+2*i];
+        pageNum=[pageTableEntry + 2+2*i];
 
         if(pageNum!=-1) then
             multipush(R1,R2,R3,R4);
@@ -119,8 +120,8 @@ if(functNum==4) then
 
             multipop(R1,R2,R3,R4);
 
-            [PTBR + 2 + 2 * i] = -1;
-            [PTBR + 3 + 2 * i] = "0000";
+            [pageTableEntry + 2 + 2 * i] = -1;
+            [pageTableEntry + 3 + 2 * i] = "0000";
 
         endif;
         i=i+1;

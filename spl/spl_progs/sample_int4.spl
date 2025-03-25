@@ -18,7 +18,7 @@ alias filefound R10;
 filefound=0;
 alias i R4;
 i=0;
-breakpoint;
+
 //FIND THE INODE INDEX
 while([INODE_TABLE+16*i+1]!=-1 && [INODE_TABLE+16*i+1]!=filename) do
     i=i+1;
@@ -32,7 +32,7 @@ endwhile;
 if([INODE_TABLE+16*i+1]==filename) then
     filefound=1;
 endif;
-breakpoint;
+
 //CREATE
 if(systemcallno==1) then
     if(filefound==1) then
@@ -136,7 +136,7 @@ endif;
 [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
 [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+9]=0;
 SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
-breakpoint;
+
 ireturn;
     
 

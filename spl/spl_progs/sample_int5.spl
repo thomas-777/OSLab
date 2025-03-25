@@ -1,5 +1,5 @@
 //open and close
-breakpoint;
+
 [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+13]=SP;
 
 alias userSP R0;
@@ -12,7 +12,7 @@ systemcallno=[[PTBR+2*((userSP-5)/512)]*512 + (userSP-5)%512];
 [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=systemcallno;
 
 
-breakpoint;
+
 //open
 if(systemcallno==2) then
     alias filename R2;
@@ -43,7 +43,7 @@ if(systemcallno==2) then
             [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=(i/2); 
         endif;
     endif;
-    breakpoint;
+    
 endif;
 
 
@@ -133,7 +133,7 @@ endif;
 
 [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
 SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
-breakpoint;
+
 ireturn;
 
 

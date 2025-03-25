@@ -1,0 +1,48 @@
+//logout
+breakpoint;
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=28;
+
+alias userSP R0;
+userSP=SP;
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13]=SP;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512-1;
+print "hi1";
+alias returnaddress R1;
+returnaddress=[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512;
+if([SYSTEM_STATUS_TABLE+1]!=2) then
+    [returnaddress]=-1;
+    [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+    SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+    ireturn;
+endif;
+
+//kill all
+multipush(R0,R1);
+R1=5;
+R2=[SYSTEM_STATUS_TABLE+1];
+call MOD_1;
+multipop(R0,R1);
+
+breakpoint;
+[PROCESS_TABLE+2*16+4]=TERMINATED;
+[PROCESS_TABLE + 16 + 4] = READY;
+[PROCESS_TABLE + 32 + 13] = 8 * 512;
+[SYSTEM_STATUS_TABLE] = 0;
+print"hi2";
+//SET STACK VALUE TO STARTING OF THE CODE PAGE( 2ND WORD HAS THE STARTING ADDRRESS)
+[[PTBR+16]*512]=[[PTBR+8]*512+1];
+breakpoint;
+[PROCESS_TABLE+2*16+13]=8*512;
+[SYSTEM_STATUS_TABLE]=0;
+breakpoint;
+multipush(R0,R1);
+call MOD_5;
+multipop(R0,R1);
+
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+ireturn;
+
+
+
+

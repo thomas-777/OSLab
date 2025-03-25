@@ -1,0 +1,182 @@
+//user functions
+
+alias userSP R0;
+userSP=SP;
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13]=SP;
+SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512-1;
+
+alias systemcallno R1;
+systemcallno=[[PTBR+2*((userSP-5)/512)]*512 + (userSP-5)%512];
+[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=systemcallno;
+
+alias returnaddress R10;
+returnaddress=[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512;
+
+//new user
+if(systemcallno==22) then
+breakpoint;
+    if([SYSTEM_STATUS_TABLE]!=1 || [SYSTEM_STATUS_TABLE+1]!=2) then
+        [returnaddress]=-2;
+        goto exit;
+    endif;
+
+    alias username R2;
+    alias password R3;
+
+    username=[[PTBR+2*((userSP-4)/512)]*512 + (userSP-4)%512];
+    password=[[PTBR+2*((userSP-3)/512)]*512 + (userSP-3)%512];
+
+    alias i R4;
+    i=1;
+    while(i<16) do
+        if([USER_TABLE+i*2]==username) then
+            [returnaddress]=-1;
+            goto exit;
+        endif;
+        i=i+1;
+    endwhile;
+    i=1;
+    while(i<16) do
+        if([USER_TABLE+i*2]==-1) then
+            break;
+        endif;
+        i=i+1;
+    endwhile;
+    breakpoint;
+    if(i==16) then
+        [returnaddress]=-3;
+        goto exit;
+    endif;
+
+    [USER_TABLE+2*i]=username;
+    encrypt R3;
+    [USER_TABLE+2*i+1]=password;
+    breakpoint;
+    [returnaddress]=0;
+    goto exit;
+endif;
+
+//remove user
+if(systemcallno==23) then
+    if([SYSTEM_STATUS_TABLE]!=1 || [SYSTEM_STATUS_TABLE+1]!=2) then
+        [returnaddress]=-2;
+        goto exit;
+    endif;
+
+    alias username R2;
+    username=[[PTBR+2*((userSP-4)/512)]*512 + (userSP-4)%512];
+    if(username=="root" || username=="kernel") then 
+        [returnaddress]=-2;
+        goto exit;
+    endif;
+    alias i R3;
+    i=1;
+    while(i<16) do
+        if([USER_TABLE+i*2]==username) then
+            break;
+        endif;
+        i=i+1;
+    endwhile;
+    alias index R4;
+    index=i;
+    if(i==16) then  
+        [returnaddress]=-1;
+        goto exit;
+    endif;
+
+    i=0;
+    while(i<60) do
+        if([ROOT_FILE +8*i+ 3]==username) then
+            [returnaddress]=-3;
+            goto exit;
+        endif;
+        i=i+1;
+    endwhile;
+
+    [USER_TABLE+index*2]=-1;
+    [USER_TABLE+index*2+1]=-1;
+
+    [returnaddress]=0;
+    goto exit;
+endif;  
+
+//set password
+if(systemcallno==24) then
+breakpoint;
+    if([SYSTEM_STATUS_TABLE+1]!=2) then
+        [returnaddress]=-2;
+        goto exit;
+    endif;
+    alias username R3;
+    alias password R4;
+
+    username=[[PTBR+2*((userSP-4)/512)]*512 + (userSP-4)%512];
+    password=[[PTBR+2*((userSP-3)/512)]*512 + (userSP-3)%512];
+    alias i R2;
+    i=1;
+    while(i<16) do
+        if([USER_TABLE+i*2]==username) then
+            break;
+        endif;
+        i=i+1;
+    endwhile;
+
+    if(i==16) then  
+        [returnaddress]=-2;
+        goto exit;
+    endif;
+    breakpoint;
+
+    if([PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+3]!=i) then
+        if([SYSTEM_STATUS_TABLE]!=1) then
+            [returnaddress]=-1;
+            goto exit;
+        endif;
+    endif;
+    encrypt R4;
+    [USER_TABLE+i*2+1]=R4;
+    [returnaddress]=0;
+    goto exit;
+endif;
+
+//get uid
+if(systemcallno==26) then
+
+    alias username R3;
+    username=[[PTBR+2*((userSP-4)/512)]*512 + (userSP-4)%512];
+    alias i R2;
+    i=1;
+    while(i<16) do
+        if([USER_TABLE+i*2]==username) then
+            [returnaddress]=i;
+            goto exit;
+        endif;
+        i=i+1;
+    endwhile;
+    [returnaddress]=-1;
+    goto exit;
+endif;
+
+//get username
+if(systemcallno==25) then
+    alias userid R2;
+    userid=[[PTBR+2*((userSP-4)/512)]*512 + (userSP-4)%512];
+
+    if(userid<0 || userid>15) then
+        [returnaddress]=-1;
+        goto exit;
+    endif;
+
+    if([USER_TABLE+userid*2]==-1) then
+        [returnaddress]=-1;
+        goto exit;
+    endif;
+
+    [returnaddress]=[USER_TABLE+userid*2];
+    goto exit;
+endif;
+
+exit:
+    [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
+    SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
+    ireturn;
