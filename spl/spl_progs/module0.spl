@@ -68,7 +68,7 @@ endif;
 //release inode
 if(functionNum==5) then
     alias inodeindex R2;
-    if([FILE_STATUS_TABLE+4*inodeindex]!=[SYSTEM_STATUS_TABLE+1]) then
+    if([TABLE+4*inodeindex]!=[SYSTEM_STATUS_TABLE+1]) then
         R0=-1;
         return;
     endif;

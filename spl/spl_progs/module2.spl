@@ -59,7 +59,6 @@ if(functNum==2) then
 endif;
 
 //get free block
-// Get free block
 if (functNum == 3) then
     alias i R2;
     i = DISK_FREE_AREA;
@@ -88,11 +87,10 @@ if(functNum==5) then
     alias pageNum R5;
     i=0;
     while(i<16) do
-        
         j=4;
         while(j<8) do
             if([DISK_MAP_TABLE + i*10 + j]==blockNum) then
-                
+                //IF DISK IS ALREADY LOADED BY SOME OTHER PROCESS ASSIGN THE PAGE NUMBER TO CORRESPONDING PAGE TABLE ENTRY
                 pageNum=[PAGE_TABLE_BASE+i*20+2*j];
                 if(pageNum!=-1) then
                     [MEMORY_FREE_LIST+pageNum]=[MEMORY_FREE_LIST+pageNum]+1;
@@ -105,7 +103,7 @@ if(functNum==5) then
         i=i+1;
     endwhile;
     
-
+    //FIND NEW PAGE AND LOAD THE CODE PAGE
     multipush(R1,R2);
     R1=1;
     call MOD_2;

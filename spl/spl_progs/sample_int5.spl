@@ -84,6 +84,7 @@ if(systemcallno==6) then
         [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-1;
     else
         alias inodeindex R5;
+        //AQUIRE INODE
 		R5=[OPEN_FILE_TABLE+ openfiletableentry*4];
         multipush(R0,R1,R2,R3,R4,R5,R6);
         R1=4;
@@ -100,6 +101,8 @@ if(systemcallno==6) then
         else
             fileSize = [INODE_TABLE + inodeindex * 16 + 2];
         endif;
+
+        //IF WHEN ADDING OFFSET LSEEK BECOMES -VE RETURN
         if(lseek+offset<0) then
             backup;
             R1=5;
@@ -110,14 +113,17 @@ if(systemcallno==6) then
             [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-2;
         else
             if (offset == 0) then
+                //IF OFFSET IS 0 SET TO THE STARTING OF THE FILE
                 [OPEN_FILE_TABLE + 4 * openfiletableentry + 2] = 0;
             else
+                //ADD THE OFFSET 
                 if (lseek + offset > fileSize) then
                     [OPEN_FILE_TABLE + 4 * openfiletableentry + 2] = fileSize;
                 else
                     [OPEN_FILE_TABLE + 4 * openfiletableentry + 2] = lseek + offset;
                 endif;
             endif;
+            //RELEASE INODE
             backup;
             R1=5;
             R3=[SYSTEM_STATUS_TABLE+1];

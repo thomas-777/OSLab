@@ -29,18 +29,23 @@ while([INODE_TABLE+16*i+1]!=-1 && [INODE_TABLE+16*i+1]!=filename) do
         ireturn;
     endif;
 endwhile;
+
 if([INODE_TABLE+16*i+1]==filename) then
     filefound=1;
 endif;
 
 //CREATE
 if(systemcallno==1) then
+
+    //IF FILE IS ALREADY THERE RETURN 0
     if(filefound==1) then
         [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=0;
         [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+9]=0;
         SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
         ireturn;
     endif;
+
+    //CREATE INODE TABLE ENTRIES 
     [INODE_TABLE+16*i+1]=filename;
     [INODE_TABLE+16*i]=DATA;
     [INODE_TABLE+16*i+2]=0;
@@ -63,6 +68,8 @@ if(systemcallno==4) then
         SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
         ireturn;
     endif;
+
+    //AQUIRE INODE SO THAT NO OTHER PROCESS ACCESSES IT WHILE DELETING
     backup;
     R1=4;
     R2=i;
@@ -71,12 +78,16 @@ if(systemcallno==4) then
     restore;
 
      if ([FILE_STATUS_TABLE + i * 4 + 1] != -1) then // file is open
+
+        //RELEASE THE INODE FROM THE PID
         backup;
         R1 = 5;
         R2 = i;
         R3 = [SYSTEM_STATUS_TABLE + 1];
         call MOD_0;
         restore;
+
+        //RETURN -2
         [[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512]=-2;
         [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+9]=0;
         SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
@@ -100,7 +111,7 @@ if(systemcallno==4) then
             [BUFFER_TABLE + bufferIndex * 4 + 1] = 0;
         endif;
 
-        //CALL RELESE BLOCK
+        //CALL RELEASE BLOCK
         backup;
         R1 = 4;
         R2 = [blockNum];
@@ -109,6 +120,8 @@ if(systemcallno==4) then
         restore;
         blockNum = blockNum + 1;
     endwhile;
+
+    //INVALIDATE INODE AND ROOT ENTRIES
     alias j R7;
     j=0;
     while(j<16) do

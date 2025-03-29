@@ -7,8 +7,11 @@ userSP=SP;
 [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13]=SP;
 SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+11]*512-1;
 
+
 alias returnaddress R10;
 returnaddress=[PTBR+2*((userSP-1)/512)]*512 + (userSP-1)%512;
+
+//IF THE PROCESS IS NOT LOGIN
 if([SYSTEM_STATUS_TABLE+1]!=1) then
     [returnaddress]=-2;
     [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
@@ -30,8 +33,8 @@ while(i<16) do
     i=i+1;
 endwhile;
 
+//NO USER FOUND
 if(i==16) then  
-    print "1";
     [returnaddress]=-1;
     [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
     SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
@@ -40,22 +43,27 @@ endif;
 
 encrypt R2;
 
+//PASSWORD DOESNT MATCH
 if([USER_TABLE+i*2+1]!=password) then
-    print "hi";
     [returnaddress]=-1;
     [PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+9]=0;
     SP=[PROCESS_TABLE+[SYSTEM_STATUS_TABLE+1]*16+13];
     ireturn;
 endif;
 
+//SET SHELL PROCESS AS CREATED
 [PROCESS_TABLE+2*16+4]=CREATED;
 
 [PROCESS_TABLE+2*16+3]=i;
 
+//SET LOGIN TO WAIT 
 [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+4]=WAIT_PROCESS;
 [PROCESS_TABLE+16*[SYSTEM_STATUS_TABLE+1]+5]=2;
 
+//SET CURRENT USER ID
 [SYSTEM_STATUS_TABLE]=i;
+
+//CALL SCHEDULER
 backup;
 call MOD_5;
 restore;
